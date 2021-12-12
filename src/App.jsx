@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { Earth } from "./components/earth";
 import { TopSection } from "./components/topSection";
 import "./components/world";
+import { Usage } from "./components/usage";
 
 const CanvasContainer = styled.div`
   width: 100%;
@@ -12,7 +13,7 @@ const CanvasContainer = styled.div`
 `;
 
 function App() {
-  return null;
+  return <Usage />;
   // return (
   //   <CanvasContainer>
   //     {/* <TopSection />
