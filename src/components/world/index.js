@@ -24,7 +24,6 @@ class BasicCharacterController {
     this._decceleration = new THREE.Vector3(-0.0005, -0.0001, -5.0);
     this._acceleration = new THREE.Vector3(1, 0.25, 50.0);
     this._velocity = new THREE.Vector3(0, 0, 0);
-
     this._animations = {};
     this._input = new BasicCharacterControllerInput();
     this._stateMachine = new CharacterFSM(
@@ -36,8 +35,8 @@ class BasicCharacterController {
 
   _LoadModels() {
     const loader = new FBXLoader();
-    loader.setPath("/assets/models/zombie/");
-    loader.load("mremireh_o_desbiens.fbx", (fbx) => {
+    loader.setPath("/assets/models/monster/");
+    loader.load("mutant.fbx", (fbx) => {
       fbx.scale.setScalar(0.1);
       fbx.traverse((c) => {
         c.castShadow = true;
@@ -64,7 +63,7 @@ class BasicCharacterController {
       };
 
       const loader = new FBXLoader(this._manager);
-      loader.setPath("/assets/models/zombie/");
+      loader.setPath("/assets/models/monster/");
       loader.load("walk.fbx", (a) => {
         _OnLoad("walk", a);
       });
@@ -76,6 +75,9 @@ class BasicCharacterController {
       });
       loader.load("dance.fbx", (a) => {
         _OnLoad("dance", a);
+      });
+      loader.load("butterfly-dance.fbx", (a) => {
+        _OnLoad("butterfly-dance", a);
       });
     });
   }
@@ -110,12 +112,11 @@ class BasicCharacterController {
       acc.multiplyScalar(2.0);
     }
 
-    console.log("THis ", this._stateMachine);
-
     if (
       this._stateMachine &&
       this._stateMachine._currentState &&
-      this._stateMachine._currentState.Name == "dance"
+      (this._stateMachine._currentState.Name == "dance" ||
+        this._stateMachine._currentState.Name == "butterfly-dance")
     ) {
       acc.multiplyScalar(0.0);
     }
@@ -208,6 +209,13 @@ class BasicCharacterControllerInput {
       case 16: // SHIFT
         this._keys.shift = true;
         break;
+      case 17: //CTRL
+        this._keys.ctrl = true;
+        break;
+      // d
+      case 68:
+        this._keys.d = true;
+        break;
     }
   }
 
@@ -230,6 +238,13 @@ class BasicCharacterControllerInput {
         break;
       case 16: // SHIFT
         this._keys.shift = false;
+        break;
+      case 17: //CTRL
+        this._keys.ctrl = false;
+        break;
+      // d
+      case 68:
+        this._keys.d = false;
         break;
     }
   }
@@ -280,6 +295,7 @@ class CharacterFSM extends FiniteStateMachine {
     this._AddState("walk", WalkState);
     this._AddState("run", RunState);
     this._AddState("dance", DanceState);
+    this._AddState("butterfly-dance", ButterflyDanceState);
   }
 }
 
@@ -331,6 +347,55 @@ class DanceState extends State {
 
   _Cleanup() {
     const action = this._parent._proxy._animations["dance"].action;
+
+    action.getMixer().removeEventListener("finished", this._CleanupCallback);
+  }
+
+  Exit() {
+    this._Cleanup();
+  }
+
+  Update(_) {}
+}
+
+class ButterflyDanceState extends State {
+  constructor(parent) {
+    super(parent);
+
+    this._FinishedCallback = () => {
+      this._Finished();
+    };
+  }
+
+  get Name() {
+    return "butterfly-dance";
+  }
+
+  Enter(prevState) {
+    const curAction = this._parent._proxy._animations["butterfly-dance"].action;
+    const mixer = curAction.getMixer();
+    mixer.addEventListener("finished", this._FinishedCallback);
+
+    if (prevState) {
+      const prevAction = this._parent._proxy._animations[prevState.Name].action;
+
+      curAction.reset();
+      curAction.setLoop(THREE.LoopOnce, 1);
+      curAction.clampWhenFinished = true;
+      curAction.crossFadeFrom(prevAction, 0.2, true);
+      curAction.play();
+    } else {
+      curAction.play();
+    }
+  }
+
+  _Finished() {
+    this._Cleanup();
+    this._parent.SetState("idle");
+  }
+
+  _Cleanup() {
+    const action = this._parent._proxy._animations["butterfly-dance"].action;
 
     action.getMixer().removeEventListener("finished", this._CleanupCallback);
   }
@@ -467,6 +532,8 @@ class IdleState extends State {
       this._parent.SetState("walk");
     } else if (input._keys.space) {
       this._parent.SetState("dance");
+    } else if (input._keys.d) {
+      this._parent.SetState("butterfly-dance");
     }
   }
 }
@@ -530,13 +597,21 @@ class CharacterControllerDemo {
     controls.update();
 
     const loader = new THREE.CubeTextureLoader();
+    // const texture = loader.load([
+    //   "/assets/worldbox/posx.jpg",
+    //   "/assets/worldbox/negx.jpg",
+    //   "/assets/worldbox/posy.jpg",
+    //   "/assets/worldbox/negy.jpg",
+    //   "/assets/worldbox/posz.jpg",
+    //   "/assets/worldbox/negz.jpg",
+    // ]);
     const texture = loader.load([
-      "/assets/worldbox/posx.jpg",
-      "/assets/worldbox/negx.jpg",
-      "/assets/worldbox/posy.jpg",
-      "/assets/worldbox/negy.jpg",
-      "/assets/worldbox/posz.jpg",
-      "/assets/worldbox/negz.jpg",
+      "/assets/worldbox/interstellar/xpos.png",
+      "/assets/worldbox/interstellar/xneg.png",
+      "/assets/worldbox/interstellar/ypos.png",
+      "/assets/worldbox/interstellar/yneg.png",
+      "/assets/worldbox/interstellar/zpos.png",
+      "/assets/worldbox/interstellar/zneg.png",
     ]);
     texture.encoding = THREE.sRGBEncoding;
     this._scene.background = texture;
