@@ -4,6 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
 import { Earth } from "./components/earth";
 import { TopSection } from "./components/topSection";
+import "./components/world";
 
 const CanvasContainer = styled.div`
   width: 100%;
@@ -11,16 +12,18 @@ const CanvasContainer = styled.div`
 `;
 
 function App() {
-  return (
-    <CanvasContainer>
-      <TopSection />
-      <Canvas>
-        <Suspense fallback={null}>
-          <Earth />
-        </Suspense>
-      </Canvas>
-    </CanvasContainer>
-  );
+  return null;
+  // return (
+  //   <CanvasContainer>
+  //     {/* <TopSection />
+  //     <Canvas>
+  //       <Suspense fallback={null}>
+  //         <Earth />
+  //       </Suspense>
+  //     </Canvas> */}
+  //     MEE
+  //   </CanvasContainer>
+  // );
 }
 
 export default App;
